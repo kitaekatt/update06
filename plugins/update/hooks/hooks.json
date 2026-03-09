@@ -2,6 +2,16 @@
   "hooks": {
     "SessionStart": [
       {"hooks": [{"type": "command", "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/sessionstart/session-bootstrap.sh", "blocking": false}]}
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/stop/bootstrap-display.sh"
+          }
+        ]
+      }
     ]
   }
 }
