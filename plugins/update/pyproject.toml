@@ -5,3 +5,13 @@ requires-python = ">=3.10"
 dependencies = [
   "bootstrap @ git+https://github.com/kitaekatt/plugins-kit.git#subdirectory=plugins/bootstrap"
 ]
+
+[project.scripts]
+update-engine = "update_engine:main"
+
+[tool.setuptools]
+py-modules = ["update_engine"]
+
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"

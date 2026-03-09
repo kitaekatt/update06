@@ -256,20 +256,18 @@ if [ -z "$FLAG_CONSOLE" ]; then
     flush_log
 fi
 
-# --- Invoke bootstrap-engine from venv ---
+# --- Invoke update-engine from venv ---
 if [ -z "$FLAG_CONSOLE" ]; then
-    "$VENV_BIN/bootstrap-engine" \
+    "$VENV_BIN/update-engine" \
         --plugin-root "$PLUGIN_ROOT" \
         --data-dir "$PLUGIN_DATA" \
         --hook-start-epoch "$HOOK_START_EPOCH" \
-        --project-dir "$PWD" \
         --background \
         "${ENGINE_FLAGS[@]}" > /dev/null 2>&1 &
 else
-    exec "$VENV_BIN/bootstrap-engine" \
+    exec "$VENV_BIN/update-engine" \
         --plugin-root "$PLUGIN_ROOT" \
         --data-dir "$PLUGIN_DATA" \
         --hook-start-epoch "$HOOK_START_EPOCH" \
-        --project-dir "$PWD" \
         "${ENGINE_FLAGS[@]}"
 fi
