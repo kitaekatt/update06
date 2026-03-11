@@ -7,7 +7,7 @@
     {
       "name": "update",
       "description": "Seed bootstrap plugin — installs plugins-kit marketplace and bootstrap plugin on team machines",
-      "version": "1.0.1",
+      "version": "1.0.2",
       "author": {"name": "Christina"},
       "source": "./plugins/update",
       "category": "development"
