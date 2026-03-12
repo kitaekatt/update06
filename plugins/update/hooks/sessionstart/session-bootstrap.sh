@@ -170,22 +170,23 @@ if [ -z "$PYTHON" ]; then
 
     log_entry "python3: downloading $ARCHIVE"
     mkdir -p "$STANDALONE_DIR"
-    if ! curl -LsSf "$URL" | tar xz -C "$STANDALONE_DIR" 2>/dev/null; then
-        log_entry "python3: FAILED - download error"
-        flush_log
-        mkdir -p "$PLUGIN_DATA"
-        printf '{"continue": true, "suppressOutput": false, "systemMessage": "%s -> python3 auto-install failed (download error). Install Python 3 manually."}\n' "${BOOTSTRAP_LABEL}" > "$PLUGIN_DATA/bootstrap_display.pending"
-        exit 0
-    fi
-
-    if [[ "$OS" == MINGW* ]] || [[ "$OS" == MSYS* ]]; then
-        log_entry "python3: installed standalone at $STANDALONE_PYTHON"
-        PYTHON="$STANDALONE_PYTHON"
+    _dl_tmp="$STANDALONE_DIR/$ARCHIVE"
+    if curl -LsSf "$URL" -o "$_dl_tmp" 2>/dev/null && tar xzf "$_dl_tmp" -C "$STANDALONE_DIR" 2>/dev/null; then
+        rm -f "$_dl_tmp"
+        if [[ "$OS" == MINGW* ]] || [[ "$OS" == MSYS* ]]; then
+            log_entry "python3: installed standalone at $STANDALONE_PYTHON"
+            PYTHON="$STANDALONE_PYTHON"
+        else
+            mkdir -p "$LOCAL_BIN"
+            ln -sf "$STANDALONE_PYTHON" "$WANT_PYTHON"
+            log_entry "python3: installed standalone, linked to $WANT_PYTHON"
+            PYTHON="$WANT_PYTHON"
+        fi
     else
-        mkdir -p "$LOCAL_BIN"
-        ln -sf "$STANDALONE_PYTHON" "$WANT_PYTHON"
-        log_entry "python3: installed standalone, linked to $WANT_PYTHON"
-        PYTHON="$WANT_PYTHON"
+        rm -f "$_dl_tmp" 2>/dev/null
+        # Non-fatal: $PYTHON is not used in this script — the engine runs via
+        # the venv console script (update-engine), and uv manages its own Python.
+        log_entry "python3: download/extract failed (non-fatal, uv will provide Python)"
     fi
 fi
 
