@@ -14,7 +14,8 @@
       },
       "source": "./plugins/update",
       "category": "development",
-      "version": "1.0.5"
+      "version": "1.0.6",
+      "ref": "v1.0.5"
     }
   ]
 }
