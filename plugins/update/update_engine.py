@@ -18,6 +18,36 @@ import os
 import sys
 
 
+STALE_MARKETPLACES = ["update01", "update02", "update03", "update04", "update05"]
+
+
+def _cleanup_stale_marketplaces(stale_names, action_entries, ok_entries, log_success):
+    """Remove old update0x marketplace entries from known_marketplaces.json."""
+    km_path = os.path.join(os.path.expanduser("~"), ".claude", "plugins", "known_marketplaces.json")
+    try:
+        with open(km_path, "r") as f:
+            km = json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError, OSError):
+        return
+
+    removed = [name for name in stale_names if name in km]
+    if not removed:
+        if log_success:
+            ok_entries.append("stale marketplaces: none found")
+        return
+
+    for name in removed:
+        del km[name]
+    try:
+        with open(km_path, "w") as f:
+            json.dump(km, f, indent=2)
+            f.write("\n")
+        for name in removed:
+            action_entries.append(f"stale marketplace: removed {name} from known_marketplaces.json")
+    except OSError:
+        pass
+
+
 def main():
     parser = argparse.ArgumentParser(description="Update engine")
     parser.add_argument("--plugin-root", required=True, help="Path to update plugin root")
@@ -108,6 +138,12 @@ def main():
         ok_entries.extend(manifest_ok)
         if failures:
             all_failures.extend(failures)
+
+    # Clean up stale marketplace entries from previous update0x iterations
+    _cleanup_stale_marketplaces(
+        ["update01", "update02", "update03", "update04", "update05"],
+        action_entries, ok_entries, log_success,
+    )
 
     # Build display section
     display_sections = [(label, list(action_entries), list(ok_entries))]
