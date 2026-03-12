@@ -1,6 +1,6 @@
 {
   "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
-  "name": "update04",
+  "name": "update05",
   "description": "Auto-update bootstrap marketplace for team plugin management",
   "owner": {
     "name": "kitaekatt"

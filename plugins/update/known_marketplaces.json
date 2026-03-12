@@ -3,8 +3,8 @@
     "source": {"source": "git", "url": "https://github.com/kitaekatt/plugins-kit.git"},
     "autoUpdate": true
   },
-  "update04": {
-    "source": {"source": "git", "url": "https://github.com/kitaekatt/update04.git"},
+  "update05": {
+    "source": {"source": "git", "url": "https://github.com/kitaekatt/update05.git"},
     "autoUpdate": true
   }
 }
