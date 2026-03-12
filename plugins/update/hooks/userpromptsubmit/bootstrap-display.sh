@@ -1,10 +1,14 @@
 #!/usr/bin/env bash
-# bootstrap-display.sh — Stop hook that surfaces bootstrap results once.
+# bootstrap-display.sh — UserPromptSubmit hook that surfaces bootstrap results once.
 #
 # The SessionStart hook fires the engine in the background. The engine writes
 # its display JSON to bootstrap_display.pending when done. This hook checks for
-# that file on every turn (~0ms when idle) and emits it once, then renames it
-# to bootstrap_display.displayed so it won't be shown again.
+# that file on every user prompt (~0ms when idle) and emits it once, then renames
+# it to bootstrap_display.displayed so it won't be shown again.
+#
+# Why UserPromptSubmit (not Stop): UserPromptSubmit supports
+# hookSpecificOutput.additionalContext, which injects context to Claude.
+# Stop hooks reject hookSpecificOutput via schema validation.
 #
 # Handshake protocol:
 #   .pending   = engine wrote this, needs to be shown
