@@ -67,6 +67,61 @@ def _cleanup_stale_marketplaces(stale_names, action_entries, ok_entries, log_suc
         ok_entries.append("stale marketplaces: none found")
 
 
+def _check_goal_and_self_disable(marketplace_name, plugin_name, action_entries, ok_entries):
+    """Check if plugins-kit:bootstrap is installed & enabled; if so, disable update06.
+
+    Returns True if update06 should short-circuit (goal reached, self-disabled).
+    Returns False if update06 should continue its normal manifest processing.
+    """
+    from bootstrap_lib.marketplace_lifecycle import check_plugin_installed, check_plugin_enabled
+
+    target_ref = "plugins-kit:bootstrap"
+
+    installed = check_plugin_installed(target_ref)
+    if not installed.passed:
+        return False
+
+    enabled = check_plugin_enabled(target_ref)
+    if not enabled.passed:
+        return False
+
+    # Goal reached — disable ourselves in settings.json
+    self_ref_cli = f"{plugin_name}@{marketplace_name}"
+    settings_path = os.path.join(os.path.expanduser("~"), ".claude", "settings.json")
+
+    try:
+        with open(settings_path, "r") as f:
+            settings = json.load(f)
+    except FileNotFoundError:
+        settings = {}
+    except (json.JSONDecodeError, OSError):
+        action_entries.append("self-disable: skipped (settings.json unreadable)")
+        return False
+
+    enabled_plugins = settings.setdefault("enabledPlugins", {})
+
+    if enabled_plugins.get(self_ref_cli) is False:
+        ok_entries.append(f"self-disable: already disabled ({self_ref_cli})")
+        return True
+
+    enabled_plugins[self_ref_cli] = False
+    try:
+        tmp_path = settings_path + ".tmp"
+        with open(tmp_path, "w") as f:
+            json.dump(settings, f, indent=2)
+            f.write("\n")
+        os.replace(tmp_path, settings_path)
+        action_entries.append(
+            f"self-disable: {self_ref_cli} disabled in settings.json "
+            f"(plugins-kit:bootstrap is installed and enabled)"
+        )
+    except OSError as e:
+        action_entries.append(f"self-disable: FAILED to write settings.json ({e})")
+        return False
+
+    return True
+
+
 def main():
     parser = argparse.ArgumentParser(description="Update engine")
     parser.add_argument("--plugin-root", required=True, help="Path to update plugin root")
@@ -139,6 +194,46 @@ def main():
         os.makedirs(data_dir, exist_ok=True)
         with open(last_version_file, "w") as f:
             f.write(version)
+
+    # Step 2c: Self-disable check — skip heavy work if bootstrap is already active
+    if _check_goal_and_self_disable(marketplace_name, plugin_name, action_entries, ok_entries):
+        display_sections = [(label, list(action_entries), list(ok_entries))]
+
+        if not args.console:
+            shell_content = _read_new_log_entries(data_dir)
+        else:
+            shell_content = ""
+
+        log_entries = action_entries + ok_entries
+        if log_entries and not args.console:
+            write_log_block(data_dir, label, log_entries)
+
+        display_lines = []
+        for header, actions, oks in display_sections:
+            section_entries = list(actions)
+            if log_success:
+                section_entries.extend(oks)
+            if section_entries:
+                display_lines.append(f"--- {header} ---")
+                display_lines.extend(section_entries)
+
+        if args.console:
+            for line in display_lines:
+                print(line)
+            return
+
+        parts = []
+        if shell_content:
+            parts.append(shell_content)
+        parts.extend(display_lines)
+        display_content = "\n".join(parts)
+
+        _update_display_marker(data_dir)
+
+        output_file = os.path.join(data_dir, "bootstrap_display.pending") if args.background else None
+        if display_content:
+            emit_success_response(display_content, label=label, output_file=output_file)
+        return
 
     # Step 3: Self-setup — no-op (config has no self_setup)
     self_setup = config.get("self_setup", {})
